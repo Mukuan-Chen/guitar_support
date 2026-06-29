@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Guitar Support - Chord Finder</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="./" aria-label="Guitar Support chord finder">
+        <img class="brand-image" src="assets/guitar-support-logo.png" alt="Guitar Support">
+      </a>
+      <nav class="top-nav" aria-label="Primary">
+        <a class="active" href="./">Chords</a>
+        <a href="#" aria-disabled="true">Scales</a>
+        <a href="#" aria-disabled="true">Tools</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="tool-shell" aria-labelledby="tool-title">
+        <div class="intro-panel">
+          <div>
+            <p class="eyebrow">Chord Finder</p>
+            <h1 id="tool-title">Find guitar chords across the fretboard</h1>
+          </div>
+        </div>
+
+        <div class="controls" aria-label="Chord controls">
+          <div class="control-group">
+            <div class="group-title">Root note</div>
+            <div class="button-grid roots" id="rootButtons"></div>
+          </div>
+
+          <div class="control-group">
+            <div class="group-title">Chord</div>
+            <div class="button-grid chords" id="typeButtons"></div>
+          </div>
+        </div>
+
+        <section class="result-summary" aria-live="polite">
+          <div>
+            <p class="eyebrow">Selected chord</p>
+            <h2 id="selectedChord">C Major</h2>
+          </div>
+          <dl>
+            <div>
+              <dt>Notes</dt>
+              <dd id="chordNotes">C E G</dd>
+            </div>
+            <div>
+              <dt>Formula</dt>
+              <dd id="chordFormula">1 3 5</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="voicing-toolbar" aria-label="Voicing display options">
+          <div class="segmented" role="group" aria-label="Label mode">
+            <button class="active" type="button" data-label-mode="finger">Fingers</button>
+            <button type="button" data-label-mode="note">Notes</button>
+          </div>
+          <label class="toggle">
+            <input id="leftHanded" type="checkbox">
+            <span>Left-handed</span>
+          </label>
+        </section>
+
+        <section class="voicing-grid" id="voicingGrid" aria-label="Chord voicings"></section>
+      </section>
+    </main>
+
+    <script src="chord-shapes.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
