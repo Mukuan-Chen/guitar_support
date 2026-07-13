@@ -96,6 +96,11 @@ main {
   margin: 0 auto 48px;
 }
 
+[hidden],
+.view-panel[hidden] {
+  display: none !important;
+}
+
 .tool-shell {
   display: grid;
   gap: 18px;
@@ -175,6 +180,16 @@ h1 {
   grid-template-columns: repeat(4, minmax(72px, 1fr));
   align-content: start;
   max-height: calc(44px * 3 + 8px * 2);
+  overflow-y: auto;
+  padding-right: 6px;
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+}
+
+.button-grid.scales {
+  grid-template-columns: repeat(3, minmax(118px, 1fr));
+  align-content: start;
+  max-height: calc(44px * 4 + 8px * 3);
   overflow-y: auto;
   padding-right: 6px;
   scrollbar-gutter: stable;
@@ -401,6 +416,135 @@ h1 {
   color: var(--muted);
 }
 
+.scale-shape-card {
+  border: 1px solid var(--line);
+  background: var(--paper-light);
+  box-shadow: var(--shadow);
+  padding: 18px;
+  min-width: 0;
+}
+
+.scale-shape-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  border-bottom: 1px solid var(--soft-line);
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+}
+
+.scale-shape-head h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.7rem, 3vw, 3.1rem);
+  line-height: 1;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.scale-shape-head p:last-child {
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+
+.shape-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.shape-picker select {
+  min-width: 74px;
+  min-height: 40px;
+  border: 1px solid var(--ink);
+  background: var(--paper-light);
+  color: var(--ink);
+  padding: 8px 30px 8px 10px;
+}
+
+.scale-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+.scale-diagram {
+  width: 100%;
+  min-height: 260px;
+  display: block;
+  border: 1px solid var(--soft-line);
+  background: rgba(239, 225, 200, 0.36);
+}
+
+.scale-diagram .fret,
+.scale-diagram .string {
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+
+.scale-diagram .nut {
+  stroke: var(--ink);
+  stroke-width: 5;
+}
+
+.scale-diagram .scale-marker {
+  fill: var(--ink);
+  stroke: var(--paper-light);
+  stroke-width: 2;
+}
+
+.scale-diagram .scale-marker.root {
+  fill: var(--accent);
+}
+
+.scale-diagram .scale-marker-text {
+  fill: var(--paper-light);
+  font-size: 11px;
+  font-weight: 760;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.scale-diagram .string-label,
+.scale-diagram .fret-number,
+.scale-diagram .position-label,
+.scale-diagram .scale-title-label {
+  fill: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.scale-diagram .scale-title-label {
+  text-anchor: start;
+}
+
+.scale-tab {
+  min-width: 0;
+  border-top: 2px solid var(--ink);
+  padding-top: 14px;
+}
+
+.scale-tab pre {
+  margin: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  color: var(--ink);
+  font-family: "Cascadia Mono", Consolas, "Courier New", monospace;
+  font-size: clamp(0.72rem, 1.25vw, 1rem);
+  line-height: 1.55;
+  white-space: pre;
+  letter-spacing: 0;
+}
+
 @media (max-width: 940px) {
   .intro-panel,
   .controls,
@@ -441,6 +585,11 @@ h1 {
     max-height: calc(44px * 4 + 8px * 3);
   }
 
+  .button-grid.scales {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-height: calc(44px * 5 + 8px * 4);
+  }
+
   .voicing-toolbar {
     align-items: stretch;
     flex-direction: column;
@@ -451,8 +600,23 @@ h1 {
   }
 
   .voicing-grid,
-  .result-summary dl {
+  .result-summary dl,
+  .scale-layout {
     grid-template-columns: 1fr;
+  }
+
+  .scale-shape-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .shape-picker {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .scale-diagram {
+    min-height: 220px;
   }
 
   .voicing-card {
@@ -477,7 +641,8 @@ h1 {
   }
 
   .button-grid.roots,
-  .button-grid.chords {
+  .button-grid.chords,
+  .button-grid.scales {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -487,6 +652,14 @@ h1 {
 
   .choice {
     min-height: 42px;
+  }
+
+  .scale-shape-card {
+    padding: 12px;
+  }
+
+  .scale-tab pre {
+    font-size: 0.82rem;
   }
 
   .voicing-card {

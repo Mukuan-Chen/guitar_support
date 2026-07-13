@@ -12,14 +12,14 @@
         <img class="brand-image" src="assets/guitar-support-logo.png" alt="Guitar Support">
       </a>
       <nav class="top-nav" aria-label="Primary">
-        <a class="active" href="./">Chords</a>
-        <a href="#" aria-disabled="true">Scales</a>
+        <a class="active" href="#chords" data-view="chords">Chords</a>
+        <a href="#scales" data-view="scales">Scales</a>
         <a href="#" aria-disabled="true">Tools</a>
       </nav>
     </header>
 
     <main>
-      <section class="tool-shell" aria-labelledby="tool-title">
+      <section class="tool-shell view-panel active" id="chordTool" aria-labelledby="tool-title" data-view-panel="chords">
         <div class="intro-panel">
           <div>
             <p class="eyebrow">Chord Finder</p>
@@ -69,9 +69,70 @@
 
         <section class="voicing-grid" id="voicingGrid" aria-label="Chord voicings"></section>
       </section>
+
+      <section class="tool-shell view-panel" id="scaleTool" aria-labelledby="scale-title" data-view-panel="scales" hidden>
+        <div class="intro-panel">
+          <div>
+            <p class="eyebrow">Scale Finder</p>
+            <h1 id="scale-title">Find guitar scales in vertical positions</h1>
+          </div>
+        </div>
+
+        <div class="controls" aria-label="Scale controls">
+          <div class="control-group">
+            <div class="group-title">Root note</div>
+            <div class="button-grid roots" id="scaleRootButtons"></div>
+          </div>
+
+          <div class="control-group">
+            <div class="group-title">Scale</div>
+            <div class="button-grid scales" id="scaleButtons"></div>
+          </div>
+        </div>
+
+        <section class="result-summary" aria-live="polite">
+          <div>
+            <p class="eyebrow">Selected scale</p>
+            <h2 id="selectedScale">C Major</h2>
+          </div>
+          <dl>
+            <div>
+              <dt>Notes</dt>
+              <dd id="scaleNotes">C D E F G A B</dd>
+            </div>
+            <div>
+              <dt>Intervals</dt>
+              <dd id="scaleIntervals">1 2 3 4 5 6 7</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="scale-shape-card" aria-label="Scale vertical shape">
+          <div class="scale-shape-head">
+            <div>
+              <p class="eyebrow">Vertical shape</p>
+              <h2 id="scaleShapeTitle">Shape 1</h2>
+              <p id="scaleShapeRange">Frets 0-4</p>
+            </div>
+            <label class="shape-picker">
+              <span>Shape</span>
+              <select id="scaleShapeSelect" aria-label="Choose scale shape"></select>
+            </label>
+          </div>
+
+          <div class="scale-layout">
+            <svg class="scale-diagram" id="scaleDiagram" viewBox="0 0 760 310" role="img" aria-label="Scale shape diagram"></svg>
+            <div class="scale-tab">
+              <div class="group-title">Tab</div>
+              <pre id="scaleTab" aria-label="Scale tab"></pre>
+            </div>
+          </div>
+        </section>
+      </section>
     </main>
 
     <script src="chord-shapes.js"></script>
+    <script src="scale-shapes.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

@@ -126,13 +126,22 @@ const chordTypes = chordTypeSpecs.map((type) => ({
   required: requiredIntervals(type.formula)
 }));
 
+const scaleData = window.SCALE_DATA || { types: [], windows: [] };
+const scaleTypes = scaleData.types;
+
 const state = {
+  view: "chords",
   root: roots[0],
   type: chordTypes[0],
+  scaleRoot: roots[0],
+  scaleType: scaleTypes[0],
+  scaleShapeIndex: 0,
   labelMode: "finger",
   leftHanded: false
 };
 
+const navButtons = [...document.querySelectorAll("[data-view]")];
+const viewPanels = [...document.querySelectorAll("[data-view-panel]")];
 const rootButtons = document.querySelector("#rootButtons");
 const typeButtons = document.querySelector("#typeButtons");
 const selectedChord = document.querySelector("#selectedChord");
@@ -141,6 +150,16 @@ const chordFormula = document.querySelector("#chordFormula");
 const voicingGrid = document.querySelector("#voicingGrid");
 const leftHanded = document.querySelector("#leftHanded");
 const labelModeButtons = [...document.querySelectorAll("[data-label-mode]")];
+const scaleRootButtons = document.querySelector("#scaleRootButtons");
+const scaleButtons = document.querySelector("#scaleButtons");
+const selectedScale = document.querySelector("#selectedScale");
+const scaleNotes = document.querySelector("#scaleNotes");
+const scaleIntervals = document.querySelector("#scaleIntervals");
+const scaleShapeTitle = document.querySelector("#scaleShapeTitle");
+const scaleShapeRange = document.querySelector("#scaleShapeRange");
+const scaleShapeSelect = document.querySelector("#scaleShapeSelect");
+const scaleDiagram = document.querySelector("#scaleDiagram");
+const scaleTab = document.querySelector("#scaleTab");
 
 function mod(value, base) {
   return ((value % base) + base) % base;
@@ -153,6 +172,10 @@ function chordName(root, type) {
   return `${root.label}${type.suffix}`;
 }
 
+function scaleName(root, type) {
+  return `${root.label} ${type.label}`;
+}
+
 function buildButtons() {
   rootButtons.innerHTML = roots.map((root) => (
     `<button class="choice ${root.value === state.root.value ? "active" : ""}" type="button" data-root="${root.value}">${root.label}</button>`
@@ -160,6 +183,14 @@ function buildButtons() {
 
   typeButtons.innerHTML = chordTypes.map((type) => (
     `<button class="choice ${type.label === state.type.label ? "active" : ""}" type="button" data-type="${type.label}">${type.label}</button>`
+  )).join("");
+
+  scaleRootButtons.innerHTML = roots.map((root) => (
+    `<button class="choice ${root.value === state.scaleRoot.value ? "active" : ""}" type="button" data-scale-root="${root.value}">${root.label}</button>`
+  )).join("");
+
+  scaleButtons.innerHTML = scaleTypes.map((type) => (
+    `<button class="choice ${type.label === state.scaleType.label ? "active" : ""}" type="button" data-scale="${type.label}">${type.label}</button>`
   )).join("");
 }
 
@@ -173,6 +204,10 @@ function intervalOf(root, note) {
 
 function chordNotesFor(root, type) {
   return type.intervals.map((interval) => shortNoteNames[mod(root.value + interval, 12)]);
+}
+
+function scaleNotesFor(root, type) {
+  return type.steps.map((step) => shortNoteNames[mod(root.value + step, 12)]);
 }
 
 function optionsForString(root, type, stringIndex, windowStart) {
@@ -445,8 +480,128 @@ function svgForVoicing(voicing, root, type, index) {
   `;
 }
 
-function render() {
-  buildButtons();
+function shapesForScale(root, type) {
+  return scaleData.windows.map((windowRange) => {
+    const strings = tuning.map((string, stringIndex) => {
+      const notes = [];
+      for (let fret = windowRange.startFret; fret <= windowRange.endFret; fret += 1) {
+        const noteValue = noteAt(stringIndex, fret);
+        const interval = intervalOf(root, noteValue);
+        if (type.steps.includes(interval)) {
+          notes.push({
+            fret,
+            note: shortNoteNames[noteValue],
+            interval,
+            root: interval === 0
+          });
+        }
+      }
+      return {
+        name: `${6 - stringIndex}:${string.string}`,
+        label: string.string,
+        notes
+      };
+    });
+    const frets = strings.flatMap((string) => string.notes.map((item) => item.fret));
+    return {
+      number: windowRange.number,
+      startFret: windowRange.startFret,
+      endFret: windowRange.endFret,
+      effectiveStartFret: frets.length ? Math.min(...frets) : windowRange.startFret,
+      effectiveEndFret: frets.length ? Math.max(...frets) : windowRange.endFret,
+      notes: scaleNotesFor(root, type),
+      strings
+    };
+  });
+}
+
+function svgForScaleShape(shape, root, type) {
+  const displayStrings = shape.strings.slice().reverse();
+  const displayStartFret = shape.startFret === 0 ? 1 : shape.startFret;
+  const fretCount = shape.endFret - displayStartFret + 1;
+  const x0 = 104;
+  const y0 = 58;
+  const width = 560;
+  const height = 178;
+  const stringGap = height / 5;
+  const fretGap = width / fretCount;
+  const openX = x0 - 34;
+  const range = Array.from({ length: fretCount + 1 }, (_, index) => displayStartFret + index);
+
+  const fretLines = range.map((fret, index) => {
+    const x = x0 + index * fretGap;
+    const cls = fret === 0 ? "nut" : "fret";
+    const label = index < fretCount ? `<text class="fret-number" x="${x + fretGap / 2}" y="34">${fret}</text>` : "";
+    return `<line class="${cls}" x1="${x}" y1="${y0}" x2="${x}" y2="${y0 + height}"></line>${label}`;
+  }).join("");
+
+  const stringLines = displayStrings.map((string, index) => {
+    const y = y0 + index * stringGap;
+    return `<line class="string" x1="${x0}" y1="${y}" x2="${x0 + width}" y2="${y}"></line>
+      <text class="string-label" x="28" y="${y}">${string.name}</text>`;
+  }).join("");
+
+  const markers = displayStrings.flatMap((string, stringIndex) => {
+    const y = y0 + stringIndex * stringGap;
+    return string.notes.map((item) => {
+      const x = item.fret === 0 ? openX : x0 + (item.fret - displayStartFret + 0.5) * fretGap;
+      const cls = item.root ? "scale-marker root" : "scale-marker";
+      return `<circle class="${cls}" cx="${x}" cy="${y}" r="16"></circle>
+        <text class="scale-marker-text" x="${x}" y="${y}">${item.note}</text>`;
+    });
+  }).join("");
+
+  const startLabel = shape.startFret === 0 ? `<text class="position-label" x="${openX}" y="${y0 + height + 34}">open</text>` : `<text class="position-label" x="42" y="${y0 + height + 34}">${shape.startFret}fr</text>`;
+
+  return `${fretLines}${stringLines}${markers}${startLabel}
+    <text class="scale-title-label" x="${x0}" y="${y0 + height + 42}">${scaleName(root, type)} - shape ${shape.number}</text>`;
+}
+
+function tabForScaleShape(shape) {
+  const ascending = shape.strings.flatMap((string, stringIndex) => (
+    string.notes.map((item) => ({ stringIndex, fret: String(item.fret) }))
+  ));
+  const descending = shape.strings.slice().reverse().flatMap((string, reverseIndex) => {
+    const stringIndex = shape.strings.length - 1 - reverseIndex;
+    return string.notes.slice().reverse().map((item) => ({ stringIndex, fret: String(item.fret) }));
+  });
+  if (ascending.length && descending.length) {
+    const lastAscending = ascending[ascending.length - 1];
+    const firstDescending = descending[0];
+    if (lastAscending.stringIndex === firstDescending.stringIndex && lastAscending.fret === firstDescending.fret) {
+      descending.shift();
+    }
+  }
+
+  const tabEvents = [...ascending, ...descending];
+  const lineLength = Math.max(90, 8 + tabEvents.length * 4);
+  const lines = shape.strings.map(() => Array.from({ length: lineLength }, () => "-"));
+
+  tabEvents.forEach((item, index) => {
+    const column = 2 + index * 4;
+    item.fret.split("").forEach((char, offset) => {
+      lines[item.stringIndex][column + offset] = char;
+    });
+  });
+
+  return lines.reverse().map((line) => line.join("")).join("\n");
+}
+
+function renderView() {
+  navButtons.forEach((button) => {
+    const isActive = button.dataset.view === state.view;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-current", isActive ? "page" : "false");
+  });
+
+  viewPanels.forEach((panel) => {
+    const isActive = panel.dataset.viewPanel === state.view;
+    panel.hidden = !isActive;
+    panel.classList.toggle("active", isActive);
+  });
+}
+
+function renderChords() {
   selectedChord.textContent = chordName(state.root, state.type);
   chordNotes.textContent = chordNotesFor(state.root, state.type).join(" ");
   chordFormula.textContent = state.type.formula.join(" ");
@@ -461,6 +616,50 @@ function render() {
     : `<div class="empty-state">No compact voicing was found for this selection.</div>`;
 }
 
+function renderScales() {
+  const shapes = shapesForScale(state.scaleRoot, state.scaleType);
+  const maxShapeIndex = Math.max(0, shapes.length - 1);
+  state.scaleShapeIndex = Math.min(state.scaleShapeIndex, maxShapeIndex);
+  const currentShape = shapes[state.scaleShapeIndex];
+
+  selectedScale.textContent = scaleName(state.scaleRoot, state.scaleType);
+  scaleNotes.textContent = scaleNotesFor(state.scaleRoot, state.scaleType).join(" ");
+  scaleIntervals.textContent = state.scaleType.intervals.join(" ");
+  scaleShapeSelect.innerHTML = shapes.map((shape, index) => (
+    `<option value="${index}" ${index === state.scaleShapeIndex ? "selected" : ""}>${shape.number}</option>`
+  )).join("");
+
+  if (!currentShape) {
+    scaleShapeTitle.textContent = "No shape";
+    scaleShapeRange.textContent = "No vertical shape was found.";
+    scaleDiagram.innerHTML = "";
+    scaleTab.textContent = "";
+    return;
+  }
+
+  scaleShapeTitle.textContent = `Shape ${currentShape.number}`;
+  scaleShapeRange.textContent = currentShape.startFret === 0
+    ? `Open / frets 1-${currentShape.endFret}`
+    : `Frets ${currentShape.startFret}-${currentShape.endFret}`;
+  scaleDiagram.innerHTML = svgForScaleShape(currentShape, state.scaleRoot, state.scaleType);
+  scaleTab.textContent = tabForScaleShape(currentShape);
+}
+
+function render() {
+  buildButtons();
+  renderView();
+  renderChords();
+  renderScales();
+}
+
+navButtons.forEach((button) => {
+  button.addEventListener("click", (event) => {
+    event.preventDefault();
+    state.view = button.dataset.view;
+    render();
+  });
+});
+
 rootButtons.addEventListener("click", (event) => {
   const button = event.target.closest("[data-root]");
   if (!button) return;
@@ -472,6 +671,27 @@ typeButtons.addEventListener("click", (event) => {
   const button = event.target.closest("[data-type]");
   if (!button) return;
   state.type = chordTypes.find((type) => type.label === button.dataset.type);
+  render();
+});
+
+scaleRootButtons.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-scale-root]");
+  if (!button) return;
+  state.scaleRoot = roots.find((root) => root.value === Number(button.dataset.scaleRoot));
+  state.scaleShapeIndex = 0;
+  render();
+});
+
+scaleButtons.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-scale]");
+  if (!button) return;
+  state.scaleType = scaleTypes.find((type) => type.label === button.dataset.scale);
+  state.scaleShapeIndex = 0;
+  render();
+});
+
+scaleShapeSelect.addEventListener("change", () => {
+  state.scaleShapeIndex = Number(scaleShapeSelect.value);
   render();
 });
 
