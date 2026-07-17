@@ -15,6 +15,7 @@ const roots = [
 
 const noteNames = ["C", "C#/Db", "D", "D#/Eb", "E", "F", "F#/Gb", "G", "G#/Ab", "A", "A#/Bb", "B"];
 const shortNoteNames = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
+const scaleNoteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const tuning = [
   { string: "E", note: 4 },
   { string: "A", note: 9 },
@@ -128,6 +129,7 @@ const chordTypes = chordTypeSpecs.map((type) => ({
 
 const scaleData = window.SCALE_DATA || { types: [], windows: [] };
 const scaleTypes = scaleData.types;
+const scaleEngine = window.GUITAR_SCALE_ENGINE;
 
 const state = {
   view: "chords",
@@ -173,7 +175,7 @@ function chordName(root, type) {
 }
 
 function scaleName(root, type) {
-  return `${root.label} ${type.label}`;
+  return `${scaleNoteNames[root.value]} ${type.label}`;
 }
 
 function buildButtons() {
@@ -186,7 +188,7 @@ function buildButtons() {
   )).join("");
 
   scaleRootButtons.innerHTML = roots.map((root) => (
-    `<button class="choice ${root.value === state.scaleRoot.value ? "active" : ""}" type="button" data-scale-root="${root.value}">${root.label}</button>`
+    `<button class="choice ${root.value === state.scaleRoot.value ? "active" : ""}" type="button" data-scale-root="${root.value}">${scaleNoteNames[root.value]}</button>`
   )).join("");
 
   scaleButtons.innerHTML = scaleTypes.map((type) => (
@@ -207,7 +209,7 @@ function chordNotesFor(root, type) {
 }
 
 function scaleNotesFor(root, type) {
-  return type.steps.map((step) => shortNoteNames[mod(root.value + step, 12)]);
+  return type.steps.map((step) => scaleNoteNames[mod(root.value + step, 12)]);
 }
 
 function optionsForString(root, type, stringIndex, windowStart) {
@@ -481,36 +483,31 @@ function svgForVoicing(voicing, root, type, index) {
 }
 
 function shapesForScale(root, type) {
+  const fretCount = Math.max(...scaleData.windows.map((windowRange) => windowRange.endFret)) + 1;
+
   return scaleData.windows.map((windowRange) => {
-    const strings = tuning.map((string, stringIndex) => {
-      const notes = [];
-      for (let fret = windowRange.startFret; fret <= windowRange.endFret; fret += 1) {
-        const noteValue = noteAt(stringIndex, fret);
-        const interval = intervalOf(root, noteValue);
-        if (type.steps.includes(interval)) {
-          notes.push({
-            fret,
-            note: shortNoteNames[noteValue],
-            interval,
-            root: interval === 0
-          });
-        }
-      }
-      return {
-        name: `${6 - stringIndex}:${string.string}`,
-        label: string.string,
-        notes
-      };
-    });
-    const frets = strings.flatMap((string) => string.notes.map((item) => item.fret));
-    return {
-      number: windowRange.number,
+    const referenceShape = scaleEngine.createVerticalShape({
+      rootValue: root.value,
+      steps: type.steps,
+      tuning,
       startFret: windowRange.startFret,
-      endFret: windowRange.endFret,
-      effectiveStartFret: frets.length ? Math.min(...frets) : windowRange.startFret,
-      effectiveEndFret: frets.length ? Math.max(...frets) : windowRange.endFret,
+      number: windowRange.number,
+      fretCount,
+    });
+
+    return {
+      ...referenceShape,
       notes: scaleNotesFor(root, type),
-      strings
+      strings: referenceShape.strings.map((string) => ({
+        name: `${6 - string.stringIndex}:${tuning[string.stringIndex].string}`,
+        label: tuning[string.stringIndex].string,
+        stringIndex: string.stringIndex,
+        notes: string.frets.map((item) => ({
+          ...item,
+          note: scaleNoteNames[item.noteValue],
+        })),
+        frets: string.frets,
+      })),
     };
   });
 }
@@ -558,33 +555,16 @@ function svgForScaleShape(shape, root, type) {
 }
 
 function tabForScaleShape(shape) {
-  const ascending = shape.strings.flatMap((string, stringIndex) => (
-    string.notes.map((item) => ({ stringIndex, fret: String(item.fret) }))
+  const tabEvents = scaleEngine.tabEventsForShape(shape);
+  const cells = shape.strings.map(() => (
+    Array.from({ length: scaleEngine.TAB_BEAT_COUNT }, () => "---")
   ));
-  const descending = shape.strings.slice().reverse().flatMap((string, reverseIndex) => {
-    const stringIndex = shape.strings.length - 1 - reverseIndex;
-    return string.notes.slice().reverse().map((item) => ({ stringIndex, fret: String(item.fret) }));
-  });
-  if (ascending.length && descending.length) {
-    const lastAscending = ascending[ascending.length - 1];
-    const firstDescending = descending[0];
-    if (lastAscending.stringIndex === firstDescending.stringIndex && lastAscending.fret === firstDescending.fret) {
-      descending.shift();
-    }
-  }
 
-  const tabEvents = [...ascending, ...descending];
-  const lineLength = Math.max(90, 8 + tabEvents.length * 4);
-  const lines = shape.strings.map(() => Array.from({ length: lineLength }, () => "-"));
-
-  tabEvents.forEach((item, index) => {
-    const column = 2 + index * 4;
-    item.fret.split("").forEach((char, offset) => {
-      lines[item.stringIndex][column + offset] = char;
-    });
+  tabEvents.forEach((item, beatIndex) => {
+    cells[item.stringIndex][beatIndex] = item.fret < 10 ? `-${item.fret}-` : `-${item.fret}`;
   });
 
-  return lines.reverse().map((line) => line.join("")).join("\n");
+  return cells.reverse().map((line) => line.join("")).join("\n");
 }
 
 function renderView() {
