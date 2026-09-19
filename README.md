@@ -6,7 +6,7 @@ Guitar Support 是一個靜態網頁工具，用來查詢吉他和弦、音階�
 
 - Chords：查詢和弦與多個吉他指法。
 - Scales：查詢音階的 vertical 指形，並顯示基本 tab 譜。
-- Tools → CAGED System：四種音階與九種琶音的五個 CAGED 指形與可水平捲動的 TAB。
+- Learn → CAGED System：四種音階與九種琶音的五個 CAGED 指形與可水平捲動的 TAB。
 
 ## 功能
 
@@ -153,7 +153,7 @@ https://your-user-name.github.io/your-repo-name/
 
 - Chords 頁面已可使用
 - Scales 頁面已可使用
-- Tools 選單已加入 CAGED System
+- Learn 選單已加入 CAGED System
 - 全站提供繁體中文／英文切換，保留當前選擇
 
 ## CAGED System
