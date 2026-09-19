@@ -2,10 +2,11 @@
 
 Guitar Support 是一個靜態網頁工具，用來查詢吉他和弦、音階、組成音、公式，以及對應的吉他指板圖。
 
-目前網站包含兩個主要功能：
+目前網站包含三個主要功能，並可在右上角切換繁體中文／英文：
 
 - Chords：查詢和弦與多個吉他指法。
 - Scales：查詢音階的 vertical 指形，並顯示基本 tab 譜。
+- Tools → CAGED System：四種音階與九種琶音的五個 CAGED 指形與可水平捲動的 TAB。
 
 ## 功能
 
@@ -39,6 +40,14 @@ guitar-support/
   app.js
   chord-shapes.js
   scale-shapes.js
+  scale-engine.js
+  i18n.js
+  caged-patterns.js
+  caged-engine.js
+  caged.js
+  CAGED-NOTES.md
+  verify-caged.js
+  verify-scale-tabs.js
   README.md
   assets/
     guitar-support-logo.png
@@ -144,7 +153,19 @@ https://your-user-name.github.io/your-repo-name/
 
 - Chords 頁面已可使用
 - Scales 頁面已可使用
-- Tools 目前是預留導覽項目，尚未實作
+- Tools 選單已加入 CAGED System
+- 全站提供繁體中文／英文切換，保留當前選擇
+
+## CAGED System
+
+- 音階：大調、自然小調、大調五聲、小調五聲
+- 琶音：maj7、m7、7、m7(b5)、maj7(#5)、m(maj7)、dim7、maj7(b5)、7(b5)
+- 兩區各自選擇根音、類型、C/A/G/E/D 指形及音名／音程標示
+- TAB 可選完整指形往返或從根音出發的單八度往返
+- 頁首提供精簡導讀，各區有讀圖說明，定位為音階與琶音指形查找工具
+- 語言與 CAGED 選擇會儲存在瀏覽器
+- 可直接開啟 `index.html`，或以 `index.html#caged` 進入工具頁
+- 指形慣例、來源、dim7 調整與驗證方式詳見 `CAGED-NOTES.md`
 
 ## 未來可加入的功能
 
