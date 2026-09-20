@@ -16,7 +16,8 @@
       shape:engine.letters.includes(value.shape)?value.shape:'C',
       labels:value.labels==='intervals'?'intervals':'notes',octave:value.octave===true};
   }
-  const save=()=>lang.save('guitar-support-caged-v1',JSON.stringify({scales:state.scales,arpeggios:state.arpeggios}));
+  let activeSection=saved.activeSection==='arpeggios'?'arpeggios':'scales';
+  const save=()=>lang.save('guitar-support-caged-v1',JSON.stringify({activeSection,scales:state.scales,arpeggios:state.arpeggios}));
   const displayInterval=s=>s.replace(/b/g,'♭').replace(/#/g,'♯');
   const rootMenuNames=['C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab','A','A#/Bb','B'];
   const rootName=value=>engine.rootNames[value].replace('b','♭');
@@ -24,9 +25,6 @@
   const titleFor=(key,s,type)=>key==='scales'?`${rootName(s.root)} ${typeName(type)}`:`${rootName(s.root)}${type.label}`;
   const selected=(a,b)=>a===b?' selected':'';
   const current=(a,b)=>a===b?' active':'';
-  function focusAnchor(id){
-    const target=document.getElementById(id);target.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});target.focus({preventScroll:true});
-  }
   function sources(type){return `https://jenslarsen.nl/${type.id}-arpeggios-caged/`;}
   function readGuide(){
     return `<details class="learn-panel" id="cagedIntroduction">
@@ -74,8 +72,8 @@
     const active=document.activeElement;
     const focus=panel.contains(active)?active.id:null;
     panel.innerHTML=`<div class="intro-panel caged-intro"><div><h1 id="caged-title">CAGED System<span class="title-dot">.</span></h1><p class="intro-copy">${say('Explore the fretboard through five connected shapes and write your own music.','用五種相連的指形認識指板，譜寫自己的音樂')}</p></div></div>
-      <nav class="caged-jump" aria-label="${say('On this page','本頁導覽')}"><a href="#caged-scales" data-jump="caged-scales">01 ${say('Scales','音階')}</a><a href="#caged-arpeggios" data-jump="caged-arpeggios">02 ${say('Arpeggios','和弦琶音')}</a></nav>
-      ${readGuide()}${block('scales','01')}${block('arpeggios','02')}
+      <div class="caged-jump" role="group" aria-label="${say('Choose content','選擇內容')}"><button id="caged-tab-scales" class="${current(activeSection,'scales')}" type="button" data-caged-section="scales" aria-pressed="${activeSection==='scales'}">01 ${say('Scales','音階')}</button><button id="caged-tab-arpeggios" class="${current(activeSection,'arpeggios')}" type="button" data-caged-section="arpeggios" aria-pressed="${activeSection==='arpeggios'}">02 ${say('Arpeggios','和弦琶音')}</button></div>
+      ${readGuide()}${block(activeSection,activeSection==='scales'?'01':'02')}
       <footer class="caged-footer"><p>${say('Keep exploring','延伸閱讀')}</p><a href="https://jenslarsen.nl/arpeggios-things-to-get-right-from-the-beginning/" target="_blank" rel="noopener noreferrer">${say('Jens Larsen · Getting started with arpeggios ↗','Jens Larsen・琶音入門觀念 ↗')}</a><a href="https://jenslarsen.nl/pdf-downloads-charts/" target="_blank" rel="noopener noreferrer">${say('Scales & arpeggio reference charts ↗','音階與琶音參考圖表 ↗')}</a><p class="footer-note">${say('Lessons written for Guitar Support, with further reading from Jens Larsen. Standard tuning: E A D G B E.','本站教學由 Guitar Support 編寫，並提供 Jens Larsen 的延伸閱讀。使用標準調弦：E A D G B E。')}</p></footer>`;
     open.forEach(id=>{const el=document.getElementById(id);if(el)el.open=true;});
     if(focus)document.getElementById(focus)?.focus({preventScroll:true});
@@ -104,7 +102,8 @@
     render();
   });
   panel.addEventListener('click',e=>{
-    const jump=e.target.closest('[data-jump]');if(jump){e.preventDefault();focusAnchor(jump.dataset.jump);return;}
+    const sectionButton=e.target.closest('[data-caged-section]');
+    if(sectionButton){activeSection=sectionButton.dataset.cagedSection;render();return;}
     const button=e.target.closest('[data-block]');if(!button)return;
     if(button.dataset.shape){state[button.dataset.block].shape=button.dataset.shape;render();}
     if(button.dataset.labels){state[button.dataset.block].labels=button.dataset.labels;render();}
